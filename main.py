@@ -39,37 +39,6 @@ def pick_first_price(text: str) -> str:
     m = re.search(r"(￥|¥)\s?[\d,]+", text)
     return m.group(0).replace("￥", "¥") if m else ""
 
-def wait_until_order_stable(page, tries=20, interval_ms=500, stable_needed=3, sample=12):
-    """
-    先頭sample個のリンク順が stable_needed 回連続で同じになったら「順番確定」とみなして進む。
-    """
-    prev = None
-    stable = 0
-
-    for _ in range(tries):
-        curr = []
-        loc = page.locator(f"{CARD_SEL} {TITLE_A_SEL}")
-        m = min(loc.count(), sample)
-
-        for i in range(m):
-            href = loc.nth(i).get_attribute("href") or ""
-            curr.append(href)
-
-        # 何も取れない間は待つ
-        if not curr or all(h == "" for h in curr):
-            page.wait_for_timeout(interval_ms)
-            continue
-
-        if curr == prev:
-            stable += 1
-            if stable >= stable_needed:
-                return
-        else:
-            stable = 0
-            prev = curr
-
-        page.wait_for_timeout(interval_ms)
-
 def build_items(page, max_items=60):
     cards = page.locator(CARD_SEL)
     n = min(cards.count(), max_items)
@@ -127,16 +96,7 @@ def main():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(locale="ja-JP")
         page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60_000)
-
-        # まず商品カードが出るまで待つ（これが一番意味のある待ち）
-        page.wait_for_selector(CARD_SEL, timeout=60_000)
-
-        # 並び順が「安定」するまで待つ（これが今回の本題）
-        wait_until_order_stable(page)
-
-        # 仕上げに少しだけ待つ（画像/価格の反映が遅い時の保険）
-        page.wait_for_timeout(500)
-
+        page.wait_for_timeout(8000)
         items = build_items(page)
         browser.close()
 

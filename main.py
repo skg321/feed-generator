@@ -128,12 +128,15 @@ def main():
         page = browser.new_page(locale="ja-JP")
         page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60_000)
 
-        try:
-            page.wait_for_load_state("networkidle", timeout=15_000)
-        except Exception:
-            pass
+        # まず商品カードが出るまで待つ（これが一番意味のある待ち）
+        page.wait_for_selector(CARD_SEL, timeout=60_000)
 
-        page.wait_for_timeout(1500)
+        # 並び順が「安定」するまで待つ（これが今回の本題）
+        wait_until_order_stable(page)
+
+        # 仕上げに少しだけ待つ（画像/価格の反映が遅い時の保険）
+        page.wait_for_timeout(500)
+
         items = build_items(page)
         browser.close()
 

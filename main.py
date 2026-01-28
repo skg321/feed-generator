@@ -5,7 +5,7 @@ from pathlib import Path
 from feedgen.feed import FeedGenerator
 from playwright.sync_api import sync_playwright
 
-LIST_URL = "https://www.onitsukatiger.com/jp/ja-jp/store/all/shoes/sneakers.html?model=MEXICO+Mid+Runner&model=SERRANO&model=SERRANO+CL&product_list_order=newest_first_DESC"
+LIST_URL = "https://www.onitsukatiger.com/jp/ja-jp/store/all/shoes/sneakers.html?model=MEXICO+Mid+Runner&model=SERRANO&model=SERRANO+CL&product_list_order=newest_first_DESC&glCountry=JP&glCurrency=JPY"
 BASE = "https://www.onitsukatiger.com"
 
 # 1商品カード（この中に名前・価格・画像・リンクが全部ある）

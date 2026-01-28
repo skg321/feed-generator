@@ -96,8 +96,13 @@ def main():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(locale="ja-JP")
         page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(8000)  # JS描画待ち
+
+        try:
+            page.wait_for_load_state("networkidle", timeout=15_000)
+        except Exception:
+            pass
+
+        page.wait_for_timeout(1500)
         items = build_items(page)
         browser.close()
 

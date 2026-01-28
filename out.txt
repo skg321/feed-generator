@@ -1,4 +1,0 @@
-url: https://www.onitsukatiger.com/jp/ja-jp/store/all/shoes/sneakers.html?model=SERRANO
-html_len: 569314
-product_links_like: 29
-serrano_token_count: 155

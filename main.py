@@ -39,6 +39,37 @@ def pick_first_price(text: str) -> str:
     m = re.search(r"(￥|¥)\s?[\d,]+", text)
     return m.group(0).replace("￥", "¥") if m else ""
 
+def wait_until_order_stable(page, tries=20, interval_ms=500, stable_needed=3, sample=12):
+    """
+    先頭sample個のリンク順が stable_needed 回連続で同じになったら「順番確定」とみなして進む。
+    """
+    prev = None
+    stable = 0
+
+    for _ in range(tries):
+        curr = []
+        loc = page.locator(f"{CARD_SEL} {TITLE_A_SEL}")
+        m = min(loc.count(), sample)
+
+        for i in range(m):
+            href = loc.nth(i).get_attribute("href") or ""
+            curr.append(href)
+
+        # 何も取れない間は待つ
+        if not curr or all(h == "" for h in curr):
+            page.wait_for_timeout(interval_ms)
+            continue
+
+        if curr == prev:
+            stable += 1
+            if stable >= stable_needed:
+                return
+        else:
+            stable = 0
+            prev = curr
+
+        page.wait_for_timeout(interval_ms)
+
 def build_items(page, max_items=60):
     cards = page.locator(CARD_SEL)
     n = min(cards.count(), max_items)

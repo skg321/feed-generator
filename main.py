@@ -51,7 +51,8 @@ def build_items(page, max_items=60):
 
         a = card.locator(TITLE_A_SEL).first
         href = norm_href(a.get_attribute("href") or "")
-        title = (a.inner_text() or "").strip()
+        raw = a.inner_text() or ""
+        title = raw.splitlines()[0].strip()
 
         # price
         price = ""

@@ -122,7 +122,7 @@ def main():
     fg.language("ja")
 
     for it in items:
-        fe = fg.add_entry()
+        fe = fg.add_entry(order='append') #デフォルトはprepend　新着順に作ったアイテムリストを下に追加して書く形なので、逆にする
         fe.id(it["id"])              # ← これが超重要（毎回同じ）
         fe.title(it["title"])
         fe.link(href=it["link"])

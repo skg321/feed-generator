@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 
 LIST_URL = "https://www.onitsukatiger.com/jp/ja-jp/store/all/shoes/sneakers.html?model=MEXICO+Mid+Runner&model=SERRANO&model=SERRANO+CL&product_list_order=newest_first_DESC&glCountry=JP&glCurrency=JPY"
 BASE = "https://www.onitsukatiger.com"
-FAVICON_URL = "https://www.onitsukatiger.com/favicon.ico"
+#FAVICON_URL = "https://www.onitsukatiger.com/favicon.ico"
 FEED_TITLE = "Onitsuka Tiger"
 
 # 1商品カード（この中に名前・価格・画像・リンクが全部ある）
@@ -25,6 +25,17 @@ def norm_href(href: str) -> str:
     if href.startswith("/"):
         return urljoin(BASE, href)
     return href
+
+def pick_favicon(page) -> str:
+    # rel に icon を含む link を優先（shortcut icon / icon / apple-touch-icon など）
+    href = page.eval_on_selector(
+        'link[rel~="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
+        "el => el && el.href"
+    )
+    if href:
+        return href
+    # 最後の保険（慣習）
+    return urljoin(BASE, "/favicon.ico")
 
 def norm_img(src: str) -> str:
     if not src:
@@ -99,6 +110,7 @@ def main():
         page = browser.new_page(locale="ja-JP")
         page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60_000)
         page.wait_for_timeout(8000)
+        favicon = pick_favicon(page)
         items = build_items(page)
         browser.close()
 
@@ -106,7 +118,7 @@ def main():
     fg.title(FEED_TITLE)
     fg.link(href=LIST_URL, rel="alternate")
     fg.description("Auto-generated feed from a JS-rendered list page (Playwright).")
-    fg.image(url=FAVICON_URL, title=FEED_TITLE, link=LIST_URL)
+    fg.image(url=favicon, title=FEED_TITLE, link=LIST_URL)
     fg.language("ja")
 
     for it in items:

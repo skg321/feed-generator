@@ -106,7 +106,7 @@ def main():
     fg.title(FEED_TITLE)
     fg.link(href=LIST_URL, rel="alternate")
     fg.description("Auto-generated feed from a JS-rendered list page (Playwright).")
-    feed.image(url=FAVICON_URL, title=FEED_TITLE, link=LIST_URL)
+    fg.image(url=FAVICON_URL, title=FEED_TITLE, link=LIST_URL)
     fg.language("ja")
 
     for it in items:

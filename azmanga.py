@@ -12,6 +12,9 @@ LIST_URLS = [
     "https://www.a-zmanga.net/archives/category/%e4%b8%80%e8%88%ac%e6%bc%ab%e7%94%bb",
     "https://www.a-zmanga.net/archives/category/%e4%b8%80%e8%88%ac%e6%bc%ab%e7%94%bb/page/2",
     "https://www.a-zmanga.net/archives/category/%e4%b8%80%e8%88%ac%e6%bc%ab%e7%94%bb/page/3",
+    "https://www.a-zmanga.net/archives/category/%e4%b8%80%e8%88%ac%e6%bc%ab%e7%94%bb/page/4",
+    "https://www.a-zmanga.net/archives/category/%e5%b0%91%e5%a5%b3%e6%bc%ab%e7%94%bb",
+    "https://www.a-zmanga.net/archives/category/%e5%b0%91%e5%a5%b3%e6%bc%ab%e7%94%bb/page/2",
 ]
 FEED_TITLE = "A-z manga (merged)"
 FEED_LINK = "https://www.a-zmanga.net/"

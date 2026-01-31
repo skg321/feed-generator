@@ -11,6 +11,7 @@ from feedgen.feed import FeedGenerator
 LIST_URLS = [
     "https://www.a-zmanga.net/archives/category/%e4%b8%80%e8%88%ac%e6%bc%ab%e7%94%bb",
     "https://www.a-zmanga.net/archives/category/%e4%b8%80%e8%88%ac%e6%bc%ab%e7%94%bb/page/2",
+    "https://www.a-zmanga.net/archives/category/%e4%b8%80%e8%88%ac%e6%bc%ab%e7%94%bb/page/3",
 ]
 FEED_TITLE = "A-z manga (merged)"
 FEED_LINK = "https://www.a-zmanga.net/"
@@ -80,7 +81,7 @@ def parse_list_page(html: str):
         except Exception:
             continue
 
-        items.append({"url": url, "title": title, "dt": dt})
+        items.append({"url": url, "title": title, "dt": dt, "dt_src": dt_src})
 
     return items
 
@@ -128,7 +129,9 @@ def main():
     # 3) 先読み（まず試作なので全件先読み）
     candidates = candidates[:MAX_PREFETCH]
     for it in candidates:
-        it["desc"] = parse_post_description(it["url"], get_html(it["url"]))
+    body = parse_post_description(it["url"], get_html(it["url"]))
+    prefix = f"<p><strong>更新：</strong>{it.get('dt_src','')}</p>\n"
+    it["desc"] = prefix + body
 
     # 4) RSS生成
     fg = FeedGenerator()

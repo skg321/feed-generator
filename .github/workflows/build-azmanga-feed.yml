@@ -3,54 +3,42 @@ name: build-azmanga-feed
 on:
   workflow_dispatch:
   schedule:
-    # GitHub Actions の cron は UTC
-    # JST 08:05 = UTC 23:05（前日）
-    # JST 20:05 = UTC 11:05
-    - cron: "5 23 * * *"
-    - cron: "5 11 * * *"
+    # GitHub Actions cron is UTC
+    # JST 05:00 = UTC 20:00 (previous day)
+    # JST 17:00 = UTC 08:00
+    - cron: "12 20 * * *"
+    - cron: "12 8 * * *"
 
 permissions:
   contents: write
 
-concurrency:
-  group: azmanga-feed
-  cancel-in-progress: true
-
 jobs:
-  build:
+  run:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install deps (no requirements.txt)
+      - name: Install
         run: |
           python -m pip install --upgrade pip
           python -m pip install requests beautifulsoup4 feedgen==1.0.0
 
-      - name: Build feed
+      - name: Build feed_azmanga.xml
         run: |
           python azmanga.py
           ls -la
           test -f feed_azmanga.xml
 
-      - name: Publish to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          # 生成物（feed_azmanga.xml）をリポジトリ直下に出している前提
-          publish_dir: .
-          destination_dir: .
-          keep_files: true
-          # 余計なものは gh-pages に載せない（feed_azmanga.xml は残る）
-          exclude_assets: |
-            .github
-            **/*.py
-            **/__pycache__/
-            requirements.txt
+      - name: Commit feed_azmanga.xml
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add feed_azmanga.xml
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update feed_azmanga.xml"
+          git push

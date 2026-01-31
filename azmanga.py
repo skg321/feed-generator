@@ -129,9 +129,9 @@ def main():
     # 3) 先読み（まず試作なので全件先読み）
     candidates = candidates[:MAX_PREFETCH]
     for it in candidates:
-    body = parse_post_description(it["url"], get_html(it["url"]))
-    prefix = f"<p><strong>更新：</strong>{it.get('dt_src','')}</p>\n"
-    it["desc"] = prefix + body
+        body = parse_post_description(it["url"], get_html(it["url"]))
+        prefix = f"<p><strong>更新：</strong>{it.get('dt_src','')}</p>\n"
+        it["desc"] = prefix + body
 
     # 4) RSS生成
     fg = FeedGenerator()

@@ -3,7 +3,7 @@ name: build-feed
 on:
   workflow_dispatch:
   schedule:
-    - cron: "5 8 * * *"  # JST 17:05 頃
+    - cron: "5 17 * * *"  # JST 2:05 頃
 
 permissions:
   contents: write

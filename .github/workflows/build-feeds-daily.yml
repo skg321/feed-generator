@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "15 18 * * *" # JST 03:15（例）
+permissions:
+  contents: write
 
 concurrency:
   group: build-feeds-daily

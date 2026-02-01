@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: feed-generator-update
+  cancel-in-progress: false
+
 jobs:
   run:
     runs-on: ubuntu-latest

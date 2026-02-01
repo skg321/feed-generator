@@ -131,7 +131,7 @@ def main() -> int:
     fg.language("ja")
 
     for it in items:
-        fe = fg.add_entry()
+        fe = fg.add_entry(order="append")  # デフォルトはprepend
         fe.id(f"pixiv-works-{works_id}-story-{it['story_id']}")
         fe.link(href=it["link"])
         fe.title(f"{it['episode']} {it['title']}".strip())

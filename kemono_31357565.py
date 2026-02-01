@@ -16,7 +16,7 @@ URL = f"{BASE}/{SERVICE}/user/{USER_ID}"
 FEED_TITLE = "kemono shine-nabyss"
 FEED_DESC = "kemono shine-nabyss feed"
 
-OUT = Path("feed_kemono_shine-nabyss.xml")
+OUT = Path("feed_kemono_31357565.xml")
 
 
 def abs_url(u: str) -> str:
@@ -39,6 +39,7 @@ def main() -> int:
 
         page.goto(URL, wait_until="networkidle")
         page.wait_for_timeout(1000)
+        page.wait_for_selector("article.post-card.post-card--preview", timeout=15000)
 
         # あなたが提示した要素：article.post-card.post-card--preview
         cards = page.locator("article.post-card.post-card--preview")
@@ -61,9 +62,15 @@ def main() -> int:
             img_el = card.locator("img.post-card__image").first
             thumb = abs_url(img_el.get_attribute("src") or "") if img_el.count() else ""
 
-            time_el = card.locator("time.timestamp").first
-            dt_raw = (time_el.get_attribute("datetime") or "").strip() if time_el.count() else ""
-            # 例: 2026-01-27T07:56:00  -> 日付だけのISO（ソート用）
+            time_loc = card.locator("time.timestamp")
+            dt_raw = ""
+            date_text = ""
+
+            if time_loc.count():
+                time_el = time_loc.first
+                dt_raw = (time_el.get_attribute("datetime") or "").strip()
+                date_text = time_el.inner_text().strip()
+
             upd_iso = dt_raw[:10] if len(dt_raw) >= 10 else ""
 
             # description（あなた指定：画像 + タイトル + 更新日）
@@ -72,8 +79,9 @@ def main() -> int:
                 desc_lines.append(f'<img src="{thumb}"><br>')
             if title:
                 desc_lines.append(title)
-            if dt_raw:
-                desc_lines.append(f"更新: {dt_raw}")
+            if date_text:
+                desc_lines.append("")                 # ← 改行
+                desc_lines.append(f"更新: {date_text}")
             description = "\n".join(desc_lines)
 
             items.append(
@@ -82,7 +90,7 @@ def main() -> int:
                     "link": link,
                     "thumb": thumb,
                     "title": title,
-                    "dt_raw": dt_raw,
+                    "date_text": date_text,   # ← 変更
                     "upd_iso": upd_iso,
                     "description": description,
                 }

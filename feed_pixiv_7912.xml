@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>pixivコミック　爛漫ドレスコードレス</title>
+    <link>https://comic.pixiv.net/works/7912</link>
+    <description>pixivコミック　爛漫ドレスコードレス　更新feed</description>
+    <docs>http://www.rssboard.org/rss-specification</docs>
+    <generator>python-feedgen</generator>
+    <language>ja</language>
+    <lastBuildDate>Sun, 01 Feb 2026 00:53:06 +0000</lastBuildDate>
+    <item>
+      <title>最初から読む</title>
+      <link>https://comic.pixiv.net/viewer/stories/106007</link>
+      <description>最初から読む</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-106007</guid>
+    </item>
+    <item>
+      <title>最初から読む</title>
+      <link>https://comic.pixiv.net/viewer/stories/106007</link>
+      <description>最初から読む</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-106007</guid>
+    </item>
+    <item>
+      <title>第1話-① 浴衣とチンアナゴ</title>
+      <link>https://comic.pixiv.net/viewer/stories/106007</link>
+      <description>第1話-①　浴衣とチンアナゴ&lt;br&gt;
+更新日: 2021年11月15日</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-106007</guid>
+      <pubDate>Mon, 15 Nov 2021 00:00:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>第1話-② 海をまとって</title>
+      <link>https://comic.pixiv.net/viewer/stories/106939</link>
+      <description>第1話-②　海をまとって&lt;br&gt;
+更新日: 2021年11月29日</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-106939</guid>
+      <pubDate>Mon, 29 Nov 2021 00:00:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>第1話-③ 着物警察</title>
+      <link>https://comic.pixiv.net/viewer/stories/107340</link>
+      <description>第1話-③　着物警察&lt;br&gt;
+更新日: 2021年12月6日</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-107340</guid>
+      <pubDate>Mon, 06 Dec 2021 00:00:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>第37話-② 私の好きな着方で</title>
+      <link>https://comic.pixiv.net/viewer/stories/220350</link>
+      <description>第37話-②　私の好きな着方で&lt;br&gt;
+更新日: 2025年12月22日</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-220350</guid>
+      <pubDate>Mon, 22 Dec 2025 00:00:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>第37話-③ 今につながる和洋折衷</title>
+      <link>https://comic.pixiv.net/viewer/stories/223264</link>
+      <description>&lt;img src="https://public-img-comic.pximg.net/c!/f=webp:auto,w=256,q=75/images/story_thumbnail/MEUiuwzv3VUNCjJEYFwE/223264.jpg?20251226114145"&gt;&lt;br&gt;
+第37話-③　今につながる和洋折衷&lt;br&gt;
+更新日: 2026年1月5日</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-223264</guid>
+      <pubDate>Mon, 05 Jan 2026 00:00:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>第38話-① 素敵な着物集団！</title>
+      <link>https://comic.pixiv.net/viewer/stories/223268</link>
+      <description>&lt;img src="https://public-img-comic.pximg.net/c!/f=webp:auto,w=256,q=75/images/story_thumbnail/IIsD1YPXTIjHiJFXqx7h/223268.jpg?20260116184555"&gt;&lt;br&gt;
+第38話-①　素敵な着物集団！&lt;br&gt;
+更新日: 2026年1月19日</description>
+      <guid isPermaLink="false">pixiv-works-7912-story-223268</guid>
+      <pubDate>Mon, 19 Jan 2026 00:00:00 +0900</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -80,7 +80,7 @@ def main() -> int:
             if title:
                 desc_lines.append(title)
             if date_text:
-                desc_lines.append("")                 # ← 改行
+                desc_lines.append("<br>")
                 desc_lines.append(f"更新: {date_text}")
             description = "\n".join(desc_lines)
 

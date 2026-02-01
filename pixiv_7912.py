@@ -9,9 +9,11 @@ from feedgen.feed import FeedGenerator
 from playwright.sync_api import sync_playwright
 
 
-WORK_ID = 7912
+#WORK_ID = 7912
 BASE = "https://comic.pixiv.net"
-URL = f"{BASE}/works/{WORK_ID}"
+URL = "https://comic.pixiv.net/works/7912"
+FEED_TITLE = "pixivコミック　爛漫ドレスコードレス"
+FEED_DESC  = "pixivコミック　爛漫ドレスコードレス　更新feed"
 OUT = Path("feed_pixiv_7912.xml")
 
 
@@ -119,16 +121,18 @@ def main() -> int:
         return x["upd_iso"] or "0000-00-00"
 
     items.sort(key=sort_key, reverse=True)
+    m = re.search(r"/works/(\d+)", URL)
+    works_id = m.group(1) if m else "unknown"
 
     fg = FeedGenerator()
-    fg.title(f"pixivコミック works/{WORK_ID}")
+    fg.title(FEED_TITLE)
     fg.link(href=URL, rel="alternate")
-    fg.description(f"pixivコミック works/{WORK_ID} の更新監視")
+    fg.description(FEED_DESC)
     fg.language("ja")
 
     for it in items:
         fe = fg.add_entry()
-        fe.id(f"pixiv-works-{WORK_ID}-story-{it['story_id']}")
+        fe.id(f"pixiv-works-{works_id}-story-{it['story_id']}")
         fe.link(href=it["link"])
         fe.title(f"{it['episode']} {it['title']}".strip())
         fe.description(it["description"])

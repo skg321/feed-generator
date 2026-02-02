@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: build-feeds-daily
+  group: feed-generator-update
   cancel-in-progress: true
 
 jobs:

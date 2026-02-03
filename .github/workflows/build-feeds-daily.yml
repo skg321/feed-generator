@@ -31,7 +31,7 @@ jobs:
         run: |
           python onitsuka.py
           python pixiv_7912.py
-          python kemono_31357565.py
+          python kemono_api_31357565.py
 
       - name: Commit if changed
         run: |

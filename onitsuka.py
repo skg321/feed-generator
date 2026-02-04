@@ -1,195 +1,294 @@
-import re
-from urllib.parse import urljoin
+from __future__ import annotations
+
+import json
+import os
 from pathlib import Path
+from urllib.parse import urljoin
 import xml.etree.ElementTree as ET
 
+import requests
 from feedgen.feed import FeedGenerator
-from playwright.sync_api import sync_playwright
 
-LIST_URL = "https://www.onitsukatiger.com/jp/ja-jp/store/all/shoes/sneakers.html?model=MEXICO+Mid+Runner&model=MEXICO+MID+RUNNER+DELUXE&model=SERRANO&model=SERRANO+CL&product_list_order=newest_first_DESC&glCountry=JP&glCurrency=JPY"
+
+# =========================
+# 基本設定
+# =========================
+
 BASE = "https://www.onitsukatiger.com"
-FEED_TITLE = "Onitsuka Tiger"
+LIST_URL = (
+    "https://www.onitsukatiger.com/jp/ja-jp/store/all/shoes/sneakers.html"
+    "?model=MEXICO+Mid+Runner"
+    "&model=MEXICO+MID+RUNNER+DELUXE"
+    "&model=SERRANO"
+    "&model=SERRANO+CL"
+    "&product_list_order=newest_first_DESC"
+    "&glCountry=JP"
+    "&glCurrency=JPY"
+)
 
 OUT_XML = Path("feed_onitsuka.xml")
+FEED_TITLE = "Onitsuka Tiger"
+FEED_DESC = "Auto-generated feed via Onitsuka Tiger GraphQL API"
 
-# 1商品カード（この中に名前・価格・画像・リンクが全部ある）
-CARD_SEL = "div.ds-sdk-product-item__main"
-TITLE_A_SEL = "div.ds-sdk-product-item__product-name a"
-PRICE_SEL = "p.ds-sdk-product-price--configurable"
-IMG_SEL = "img"
+GRAPHQL_ENDPOINT = "https://catalog-service.adobe.io/graphql"
 
 
-def norm_href(href: str) -> str:
-    if not href:
-        return ""
-    href = href.strip()
-    if href.startswith("//"):
-        return "https:" + href
-    if href.startswith("/"):
-        return urljoin(BASE, href)
-    return href
+# =========================
+# 環境変数（GitHub Actions Secrets）チェック
+# =========================
 
-
-def pick_favicon(page) -> str:
-    # rel に icon を含む link を優先（shortcut icon / icon / apple-touch-icon など）
-    href = page.eval_on_selector(
-        'link[rel~="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
-        "el => el && el.href"
+REQUIRED_ENVS = [
+    "OT_X_API_KEY",
+    "OT_MAGENTO_ENV_ID",
+    "OT_MAGENTO_WEBSITE_CODE",
+    "OT_MAGENTO_STORE_CODE",
+    "OT_MAGENTO_STORE_VIEW_CODE",
+]
+missing = [k for k in REQUIRED_ENVS if not os.getenv(k)]
+if missing:
+    raise RuntimeError(
+        "Missing required env vars: "
+        + ", ".join(missing)
+        + " (GitHub Actions: pass secrets via step env: ...)"
     )
-    if href:
-        return href
-    # 最後の保険（慣習）
-    return urljoin(BASE, "/favicon.ico")
+
+HEADERS = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Origin": "https://www.onitsukatiger.com",
+    "X-Api-Key": os.getenv("OT_X_API_KEY", ""),
+    "Magento-Environment-Id": os.getenv("OT_MAGENTO_ENV_ID", ""),
+    "Magento-Website-Code": os.getenv("OT_MAGENTO_WEBSITE_CODE", ""),
+    "Magento-Store-Code": os.getenv("OT_MAGENTO_STORE_CODE", ""),
+    "Magento-Store-View-Code": os.getenv("OT_MAGENTO_STORE_VIEW_CODE", ""),
+}
+
+# 任意（あれば使う）
+if os.getenv("OT_MAGENTO_CUSTOMER_GROUP"):
+    HEADERS["Magento-Customer-Group"] = os.getenv("OT_MAGENTO_CUSTOMER_GROUP", "")
 
 
-def norm_img(src: str) -> str:
-    if not src:
+# =========================
+# GraphQL Query
+# =========================
+
+QUERY = r"""
+query productSearch(
+  $phrase: String!
+  $pageSize: Int
+  $currentPage: Int = 1
+  $filter: [SearchClauseInput!]
+  $sort: [ProductSearchSortInput!]
+  $context: QueryContextInput
+) {
+  productSearch(
+    phrase: $phrase
+    page_size: $pageSize
+    current_page: $currentPage
+    filter: $filter
+    sort: $sort
+    context: $context
+  ) {
+    total_count
+    items {
+      product {
+        sku
+        name
+        canonical_url
+        image { url }
+        price_range {
+          minimum_price {
+            final_price { value currency }
+          }
+        }
+      }
+      productView {
+        attributes(roles: ["visible_in_plp"]) {
+          name
+          value
+        }
+      }
+    }
+  }
+}
+"""
+
+VARIABLES = {
+    "phrase": "",
+    "pageSize": 80,   # 33件なら十分、増えても余裕
+    "currentPage": 1,
+    "filter": [
+        {
+            "attribute": "model",
+            "in": [
+                "MEXICO Mid Runner",
+                "MEXICO MID RUNNER DELUXE",
+                "SERRANO",
+                "SERRANO CL",
+            ],
+        },
+        {"attribute": "categoryPath", "eq": "store/all/shoes/sneakers"},
+        {"attribute": "visibility", "in": ["Catalog", "Catalog, Search"]},
+    ],
+    "sort": [{"attribute": "newest_first", "direction": "DESC"}],
+    "context": {
+        "customerGroup": os.getenv(
+            "OT_MAGENTO_CUSTOMER_GROUP",
+            "b6589fc6ab0dc82cf12099d1c2d40ab994e8410c",
+        ),
+        "userViewHistory": [],
+    },
+}
+
+
+# =========================
+# Utility
+# =========================
+
+def fix_url(u: str) -> str:
+    u = (u or "").strip()
+    if not u:
         return ""
-    src = src.strip()
-    # このサイトは "https:////" みたいな表記ゆれが出ることがある
-    src = src.replace("https:////", "https://")
-    if src.startswith("//"):
-        src = "https:" + src
-    return src
+    if u.startswith("//"):
+        return "https:" + u
+    if u.startswith("/"):
+        return urljoin(BASE, u)
+    return u
 
 
-def pick_first_price(text: str) -> str:
-    # 念のためHTMLから「¥12,100」っぽいものを拾う保険
-    m = re.search(r"(￥|¥)\s?[\d,]+", text)
-    return m.group(0).replace("￥", "¥") if m else ""
-
-
-def build_items(page, max_items=60):
-    cards = page.locator(CARD_SEL)
-    n = min(cards.count(), max_items)
-    items = []
-    seen = set()
-
-    for i in range(n):
-        card = cards.nth(i)
-
-        a = card.locator(TITLE_A_SEL).first
-        href = norm_href(a.get_attribute("href") or "")
-        raw = a.inner_text() or ""
-        title = raw.splitlines()[0].strip()
-
-        # price
-        price = ""
-        try:
-            price = (card.locator(PRICE_SEL).first.inner_text() or "").strip()
-        except Exception:
-            pass
-        if not price:
-            # フォールバック
+def newest_first_key(item: dict) -> int:
+    """念のため productView.attributes の newest_first で並びを自前保証"""
+    attrs = (item.get("productView") or {}).get("attributes") or []
+    for a in attrs:
+        if a.get("name") == "newest_first":
             try:
-                price = pick_first_price(card.inner_text() or "")
+                return int(a.get("value"))
             except Exception:
-                price = ""
-
-        # image
-        img = card.locator(IMG_SEL).first
-        img_src = norm_img(img.get_attribute("src") or "")
-
-        if not href or href in seen:
-            continue
-        seen.add(href)
-
-        # RSS descriptionに画像と価格（HTML）を入れる
-        desc_parts = []
-        if price:
-            desc_parts.append(f"\nPrice: {price}\n\n")
-        if img_src:
-            desc_parts.append(f'<img src="{img_src}">\n')
-
-        items.append({
-            "id": href,          # 現行どおり：GUID固定（=href）
-            "link": href,
-            "title": title or href.split("/")[-1],
-            "description": "".join(desc_parts) if desc_parts else href,
-        })
-
-    return items
+                return -10**18
+    return -10**18
 
 
-def _tag_endswith(elem, name: str) -> bool:
-    # namespace対策：{...}guid みたいになっても拾えるように末尾一致
-    return elem.tag.endswith(name)
-
-
-def load_existing_ids(path: Path) -> list[str]:
-    """
-    既存 feed.xml から item の guid（なければ link）を取得し、現行キー（href）と比較できる形にする。
-    """
+def load_existing_guids(path: Path) -> list[str]:
+    """前回XMLの item/guid を読み取り、同一なら書き換えない"""
     if not path.exists():
         return []
-
     try:
         tree = ET.parse(path)
         root = tree.getroot()
-    except ET.ParseError:
-        # 壊れていたら「前回なし」扱いで再生成
+    except Exception:
         return []
 
-    ids: list[str] = []
-    for item in root.iter():
-        if not _tag_endswith(item, "item"):
+    guids: list[str] = []
+    for elem in root.iter():
+        if not elem.tag.endswith("item"):
+            continue
+        guid = None
+        for c in list(elem):
+            if c.tag.endswith("guid"):
+                guid = (c.text or "").strip()
+                break
+        if guid:
+            guids.append(guid)
+    return guids
+
+
+# =========================
+# Core
+# =========================
+
+def fetch_items() -> list[dict]:
+    resp = requests.post(
+        GRAPHQL_ENDPOINT,
+        headers=HEADERS,
+        json={"query": QUERY, "variables": VARIABLES},
+        timeout=40,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    if "errors" in data:
+        raise RuntimeError("GraphQL errors: " + json.dumps(data["errors"], ensure_ascii=False))
+
+    items = data["data"]["productSearch"]["items"]
+    items.sort(key=newest_first_key, reverse=True)
+    return items
+
+
+def main() -> None:
+    items = fetch_items()
+
+    feed_rows = []
+    seen = set()
+
+    for it in items:
+        p = it.get("product") or {}
+        sku = (p.get("sku") or "").strip()
+        if not sku:
             continue
 
-        guid = None
-        link = None
-        for child in list(item):
-            if _tag_endswith(child, "guid"):
-                guid = (child.text or "").strip()
-            elif _tag_endswith(child, "link"):
-                link = (child.text or "").strip()
+        link = fix_url(p.get("canonical_url") or "")
+        if not link or link in seen:
+            continue
+        seen.add(link)
 
-        if guid:
-            ids.append(guid)
-        elif link:
-            ids.append(link)
+        name = (p.get("name") or sku).strip()
+        img = fix_url((p.get("image") or {}).get("url") or "")
 
-    return ids
+        price = (
+            (p.get("price_range") or {})
+            .get("minimum_price", {})
+            .get("final_price", {})
+        )
+        price_val = price.get("value")
+        currency = price.get("currency") or "JPY"
 
+        # ===== ここが要望反映ポイント =====
+        # TITLE：価格なし
+        title = f"{name} / {sku}"
 
-def main():
-    # 1) スクレイプ
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(locale="ja-JP")
-        page.goto(LIST_URL, wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_timeout(8000)
-        favicon = pick_favicon(page)
-        items = build_items(page)
-        browser.close()
+        # description：価格と画像の間に <br>
+        desc = ""
+        if isinstance(price_val, (int, float)):
+            desc += f"{int(price_val):,} {currency}"
+        if img:
+            if desc:
+                desc += "<br>"
+            desc += f'<img src="{img}">'
+        if not desc:
+            desc = sku
+        # ===== ここまで =====
 
-    # 2) 差分判定（現行キー：href）
-    old_ids = load_existing_ids(OUT_XML)
-    new_ids = [it["id"] for it in items]  # it["id"] は href 固定
+        feed_rows.append(
+            {
+                "guid": sku,    # GUIDはSKU固定（更新判定が安定）
+                "title": title,
+                "link": link,
+                "desc": desc,
+            }
+        )
 
-    # 順序が揺れるサイトなら、次行を「set比較」に変えてください：
-    # if set(old_ids) == set(new_ids):
-    if old_ids == new_ids:
-        print("No changes in item IDs. Skip writing feed.xml.")
+    old_guids = load_existing_guids(OUT_XML)
+    new_guids = [r["guid"] for r in feed_rows]
+    if old_guids == new_guids:
+        print("No changes. feed_onitsuka.xml not updated.")
         return
 
-    # 3) RSS生成（更新ありのときだけ）
     fg = FeedGenerator()
     fg.title(FEED_TITLE)
     fg.link(href=LIST_URL, rel="alternate")
-    fg.description("Auto-generated feed from a JS-rendered list page (Playwright).")
-    fg.image(url=favicon, title=FEED_TITLE, link=LIST_URL)
+    fg.description(FEED_DESC)
     fg.language("ja")
 
-    for it in items:
-        fe = fg.add_entry(order="append")  # デフォルトはprepend
-        fe.id(it["id"])                    # ← 現行どおり：href固定
-        fe.title(it["title"])
-        fe.link(href=it["link"])
-        fe.description(it["description"])
-        # pubDateは付けない：毎回更新扱いになる事故を避ける（現行方針どおり）
+    for r in feed_rows:
+        fe = fg.add_entry(order="append")
+        fe.id(r["guid"])
+        fe.guid(r["guid"], permalink=False)
+        fe.title(r["title"])
+        fe.link(href=r["link"])
+        fe.description(r["desc"])
 
     OUT_XML.write_bytes(fg.rss_str(pretty=True))
-    print("feed.xml updated.")
+    print("feed_onitsuka.xml updated.")
 
 
 if __name__ == "__main__":

@@ -28,6 +28,13 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: Run generators
+        env:
+          OT_X_API_KEY: ${{ secrets.OT_X_API_KEY }}
+          OT_MAGENTO_ENV_ID: ${{ secrets.OT_MAGENTO_ENV_ID }}
+          OT_MAGENTO_WEBSITE_CODE: ${{ secrets.OT_MAGENTO_WEBSITE_CODE }}
+          OT_MAGENTO_STORE_CODE: ${{ secrets.OT_MAGENTO_STORE_CODE }}
+          OT_MAGENTO_STORE_VIEW_CODE: ${{ secrets.OT_MAGENTO_STORE_VIEW_CODE }}
+          OT_MAGENTO_CUSTOMER_GROUP: ${{ secrets.OT_MAGENTO_CUSTOMER_GROUP }}
         run: |
           python onitsuka_api.py
           python pixiv_7912.py

@@ -24,8 +24,7 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          python -m pip install feedgen playwright requests
-          python -m playwright install --with-deps chromium
+          python -m pip install feedgen requests
 
       - name: Run generators
         env:
@@ -37,7 +36,7 @@ jobs:
           OT_MAGENTO_CUSTOMER_GROUP: ${{ secrets.OT_MAGENTO_CUSTOMER_GROUP }}
         run: |
           python onitsuka_api.py
-          python pixiv_7912.py
+          python pixiv_api_7912.py
           python kemono_api_31357565.py
 
       - name: Commit if changed
